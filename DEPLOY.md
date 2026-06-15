@@ -14,7 +14,59 @@
 
 ---
 
-## 方式一：一键部署脚本（推荐）
+## 方式一：Gitee Go 自动部署（推荐）
+
+> 代码推送到 Gitee 后自动触发构建和部署到你的服务器。
+
+### 前置条件
+
+1. 项目已推送到 `https://gitee.com/luodm/cpbfit`
+2. 一台 Ubuntu/Debian 服务器（已开通 Gitee Go，免费版每月有额度）
+3. 服务器已安装基础环境（如有需要，脚本会自动补齐）
+
+### 开启 Gitee Go
+
+1. 打开 [https://gitee.com/luodm/cpbfit](https://gitee.com/luodm/cpbfit)
+2. 点击顶部 **「服务」→「Gitee Go」**
+3. 点击 **「开启」** 按钮
+4. 选择流水线文件来源: **「仓库已存在 .gitee/workflows 目录」**
+
+### 配置服务器密钥
+
+在 Gitee 仓库页面：
+1. 点击 **「管理」→「Gitee Go」→「环境变量」**
+2. 添加以下变量：
+
+| 变量名 | 说明 | 示例 |
+|--------|------|------|
+| `VPS_HOST` | 服务器公网 IP | `138.2.46.247` |
+| `VPS_PORT` | SSH 端口（默认 22） | `22` |
+| `VPS_USER` | SSH 用户名 | `root` |
+| `VPS_PASSWORD` | SSH 密码 | `你的密码` |
+| `NEXTAUTH_SECRET` | JWT 密钥 | `openssl rand -base64 32` 生成 |
+| `DEEPSEEK_API_KEY` | AI 功能密钥（可选） | `sk-xxx` |
+
+### 触发部署
+
+- 每次推送代码到 `master` 分支，Gitee Go 会自动：
+  1. 拉取代码 → 安装依赖 → 构建
+  2. SSH 登录服务器 → 更新代码 → 重建 → 重启应用
+  3. 自动配置 Nginx 反向代理（首次）
+
+### 查看运行状态
+
+```bash
+# 查看部署日志
+Gitee 仓库 → 「Gitee Go」→ 点击运行记录
+
+# 服务器上查看应用
+pm2 status
+pm2 logs weight-track
+```
+
+---
+
+## 方式二：一键部署脚本
 
 SSH 登录到服务器后，运行：
 

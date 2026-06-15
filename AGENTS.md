@@ -189,6 +189,24 @@ src/
 
 ## 部署
 
+### Gitee Go 自动部署
+
+配置文件：`.gitee/workflows/deploy.yml`
+
+每次推送 `master` 分支时自动：
+1. 构建 Next.js 生产版本
+2. SSH 登录服务器
+3. 拉取最新代码 → 安装依赖 → 数据库迁移 → 导入食物数据 → 构建 → PM2 重启
+
+需在 Gitee 仓库 → 管理 → Gitee Go → 环境变量中配置：
+- `VPS_HOST`, `VPS_PORT`, `VPS_USER`, `VPS_PASSWORD` — 服务器连接信息
+- `NEXTAUTH_SECRET` — JWT 密钥
+- `DEEPSEEK_API_KEY` — AI 功能密钥（可选）
+
+### 一键部署脚本（VPS）
+
+`bash deploy.sh` — 交互式脚本，自动安装 Node.js/Nginx/PM2，配置反向代理和 HTTPS。
+
 ### Vercel 部署方式
 
 1. 推送代码到 Git 仓库

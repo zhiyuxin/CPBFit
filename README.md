@@ -118,9 +118,15 @@ DEEPSEEK_API_KEY="sk-your-deepseek-api-key-here"   # 从 https://platform.deepse
 
 **管理员测试账号：** `admin@weight.com` / `admin123`
 
-## 📦 部署到 VPS
+## 📦 部署方式
 
-一键部署脚本：
+### 方式一：Gitee Go 自动部署（推送即上线）
+
+代码推送到 Gitee 后自动构建+部署到服务器。配置 Gitee Go 环境变量后一次搞定。
+
+详见 [DEPLOY.md](DEPLOY.md) — 含 Gitee Go 配置步骤、一键部署脚本、Nginx 配置等完整指南。
+
+### 方式二：VPS 一键部署
 
 ```bash
 # SSH 到服务器后运行
@@ -129,9 +135,7 @@ cd /tmp/cpbfit
 bash deploy.sh
 ```
 
-详见 [DEPLOY.md](DEPLOY.md) — 包含一键部署脚本、手动部署步骤、Nginx 配置、HTTPS、日常运维等完整指南。
-
-## 📦 部署到 Vercel
+### 方式三：Vercel
 
 ```bash
 # 推送代码到 Git
@@ -192,6 +196,9 @@ weight-track/
 │   │   ├── auth.ts            # NextAuth 配置
 │   │   └── utils.ts           # 工具函数
 │   └── proxy.ts               # 路由守卫中间件
+├── .gitee/
+│   └── workflows/
+│       └── deploy.yml         # Gitee Go 自动部署配置
 ├── scripts/
 │   └── vercel-build.sh        # Vercel 构建脚本
 └── package.json
