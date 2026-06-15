@@ -125,7 +125,7 @@ DEEPSEEK_API_KEY="sk-your-deepseek-api-key-here"   # 从 https://platform.deepse
 ```bash
 # SSH 到服务器后运行
 git clone https://gitee.com/luodm/cpbfit.git /tmp/cpbfit
-cd /tmp/cpbfit/weight-track
+cd /tmp/cpbfit
 bash deploy.sh
 ```
 

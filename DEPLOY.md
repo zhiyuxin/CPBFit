@@ -26,7 +26,7 @@ apt update && apt install -y git
 git clone https://gitee.com/luodm/cpbfit.git /tmp/cpbfit
 
 # 运行部署脚本
-cd /tmp/cpbfit/weight-track
+cd /tmp/cpbfit
 bash deploy.sh
 ```
 
@@ -45,17 +45,20 @@ bash deploy.sh
 
 1. ✅ 系统更新 + 安装 Nginx、Git、curl 等
 2. ✅ 安装 Node.js 20
-3. ✅ 克隆项目代码
-4. ✅ 安装 npm 依赖 + 初始化 SQLite 数据库 + 导入食物数据
+3. ✅ 克隆项目代码到部署目录
+4. ✅ 安装 npm 依赖 + 初始化 SQLite 数据库 + 导入 190 种食物数据
 5. ✅ 创建 `.env` 环境变量文件
-6. ✅ 构建生产版本 + 用 PM2 启动 + 设置开机自启
-7. ✅ 配置 Nginx 反向代理 + 自动 HTTPS（有域名时）
+6. ✅ 生产构建 + PM2 启动 + 开机自启
+7. ✅ Nginx 反向代理 + 自动 HTTPS（有域名时）
 
 > 部署完成后，直接打开服务器 IP 或域名即可访问。
 
 ---
 
 ## 方式二：手动部署
+
+> 注意：`git clone` 会直接将项目文件克隆到目标目录，项目没有多级嵌套。
+> 如 `git clone ... /var/www/weight-track` 后，项目文件就在 `/var/www/weight-track/` 中。
 
 ### 1. 安装 Node.js
 
@@ -73,7 +76,7 @@ npm -v    # 10.x
 
 ```bash
 git clone https://gitee.com/luodm/cpbfit.git /var/www/weight-track
-cd /var/www/weight-track/weight-track
+cd /var/www/weight-track
 ```
 
 ### 3. 安装依赖 + 初始化数据库
@@ -174,7 +177,7 @@ pm2 monit                 # 资源监控
 ### 更新代码
 
 ```bash
-cd /var/www/weight-track/weight-track
+cd /var/www/weight-track
 git pull
 npm install
 npx prisma generate
@@ -187,13 +190,13 @@ pm2 restart weight-track
 SQLite 数据库文件在 `prisma/dev.db`，直接备份这个文件即可：
 
 ```bash
-cp /var/www/weight-track/weight-track/prisma/dev.db ~/backup-$(date +%Y%m%d).db
+cp /var/www/weight-track/prisma/dev.db ~/backup-$(date +%Y%m%d).db
 ```
 
 ### 重置数据库
 
 ```bash
-cd /var/www/weight-track/weight-track
+cd /var/www/weight-track
 npx prisma db push --force-reset
 npx tsx prisma/seed.ts
 pm2 restart weight-track
@@ -226,7 +229,7 @@ pm2 startup systemd -u root --hp /root
 
 ```bash
 # 编辑 .env，填入 DeepSeek Key 后重启
-vim /var/www/weight-track/weight-track/.env
+vim /var/www/weight-track/.env
 pm2 restart weight-track
 ```
 
