@@ -42,11 +42,21 @@ export function WeightInput({
     setWeight(next.toFixed(1));
   };
 
+  const hasData = !!initialWeight;
+
   return (
-    <GlassCard>
+    <GlassCard className="overflow-hidden relative">
+      {/* Accent top border when has data */}
+      {hasData && (
+        <span className="absolute top-0 left-4 right-4 h-0.5 bg-accent rounded-full" />
+      )}
+
       <form onSubmit={handleSubmit}>
-        <h2 className="mb-4 text-base font-semibold text-text-primary">
-          记录体重
+        <h2 className="mb-4 text-base font-semibold text-text-primary flex items-center gap-2">
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">
+            {hasData ? "✓" : "①"}
+          </span>
+          {hasData ? "更新体重" : "记录体重"}
         </h2>
 
         <div className="mb-4">
@@ -54,20 +64,21 @@ export function WeightInput({
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-xl border border-separator/40 bg-transparent px-4 py-2.5 text-sm text-text-primary outline-none focus:border-accent"
+            className="w-full rounded-xl border border-separator/40 bg-bg/50 px-4 py-2.5 text-sm text-text-primary outline-none focus:border-accent transition-colors"
             max={today}
           />
         </div>
 
-        <div className="mb-4 flex items-center justify-center gap-4">
+        <div className="mb-4 flex items-center justify-center gap-5">
           <button
             type="button"
             onClick={() => adjustWeight(-0.1)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-fill text-text-primary active:scale-95 transition-transform"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-fill text-text-primary btn-press shadow-sm"
+            aria-label="减 0.1 kg"
           >
             <Minus size={18} />
           </button>
-          <div className="relative">
+          <div className="relative flex items-center">
             <input
               type="number"
               value={weight}
@@ -76,17 +87,18 @@ export function WeightInput({
               step="0.1"
               min="20"
               max="300"
-              className="w-32 rounded-2xl bg-accent/10 px-4 py-3 text-center text-2xl font-bold text-accent outline-none"
+              className="w-40 rounded-2xl bg-accent/8 px-4 py-3.5 text-center text-3xl font-bold text-accent outline-none transition-shadow focus:shadow-[0_0_0_3px_rgba(0,122,255,0.2)]"
               required
             />
-            <span className="absolute -right-8 top-1/2 -translate-y-1/2 text-sm font-medium text-text-secondary">
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-text-secondary">
               kg
             </span>
           </div>
           <button
             type="button"
             onClick={() => adjustWeight(0.1)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-fill text-text-primary active:scale-95 transition-transform"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-fill text-text-primary btn-press shadow-sm"
+            aria-label="加 0.1 kg"
           >
             <Plus size={18} />
           </button>
@@ -98,16 +110,25 @@ export function WeightInput({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="备注（可选）"
-            className="w-full rounded-xl border border-separator/40 bg-transparent px-4 py-2.5 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-accent"
+            className="w-full rounded-xl border border-separator/40 bg-bg/50 px-4 py-2.5 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-accent transition-colors"
           />
         </div>
 
         <button
           type="submit"
           disabled={saving || !weight || !date}
-          className="w-full rounded-2xl bg-accent py-3 text-base font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-40"
+          className="w-full rounded-2xl bg-accent py-3.5 text-base font-semibold text-white transition-all btn-press disabled:opacity-40 disabled:active:scale-100 shadow-sm shadow-accent/20"
         >
-          {saving ? "保存中..." : initialWeight ? "更新记录" : "✓ 记录体重"}
+          {saving ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="inline-block h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              保存中...
+            </span>
+          ) : hasData ? (
+            "✓ 更新记录"
+          ) : (
+            "记录体重"
+          )}
         </button>
       </form>
     </GlassCard>

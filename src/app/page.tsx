@@ -27,29 +27,60 @@ interface Profile {
   name?: string;
 }
 
+function Skeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="skeleton h-7 w-24 mb-1" />
+          <div className="skeleton h-4 w-16" />
+        </div>
+        <div className="text-right">
+          <div className="skeleton h-8 w-20 mb-1 ml-auto" />
+          <div className="skeleton h-3 w-14 ml-auto" />
+        </div>
+      </div>
+      <div className="glass-card px-5 py-4">
+        <div className="skeleton h-12 w-full mb-3" />
+        <div className="skeleton h-16 w-full mb-3" />
+        <div className="skeleton h-12 w-full" />
+      </div>
+      <div className="glass-card px-5 py-4">
+        <div className="skeleton h-5 w-20" />
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [records, setRecords] = useState<WeightRecord[]>([]);
   const [profile, setProfile] = useState<Profile>({});
   const [water, setWater] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    const [recRes, profRes, waterRes] = await Promise.all([
-      fetch("/api/records?days=90"),
-      fetch("/api/profile"),
-      fetch("/api/water"),
-    ]);
-    const recData = await recRes.json();
-    const profData = await profRes.json();
-    const waterData = await waterRes.json();
-    setRecords(recData);
-    setProfile(profData);
+    setLoading(true);
+    try {
+      const [recRes, profRes, waterRes] = await Promise.all([
+        fetch("/api/records?days=90"),
+        fetch("/api/profile"),
+        fetch("/api/water"),
+      ]);
+      const recData = await recRes.json();
+      const profData = await profRes.json();
+      const waterData = await waterRes.json();
+      setRecords(recData);
+      setProfile(profData);
 
-    const today = new Date().toISOString().split("T")[0];
-    const todayWater = waterData.find(
-      (w: any) => w.date.split("T")[0] === today
-    );
-    setWater(todayWater?.cups || 0);
+      const today = new Date().toISOString().split("T")[0];
+      const todayWater = waterData.find(
+        (w: any) => w.date.split("T")[0] === today
+      );
+      setWater(todayWater?.cups || 0);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -82,6 +113,8 @@ export default function Home() {
     });
   };
 
+  if (loading) return <Skeleton />;
+
   const today = new Date().toISOString().split("T")[0];
   const todayRecord = records.find((r) => r.date.split("T")[0] === today);
   const latestRecord = records[records.length - 1];
@@ -109,47 +142,49 @@ export default function Home() {
         )
       : null;
 
-  const totalLoss =
+  const totalChange =
     profile.startKg && currentWeight != null
       ? Math.round((currentWeight - profile.startKg) * 10) / 10
       : null;
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Apple-style Header */}
+      <div className="flex items-center justify-between page-enter">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">
             {formatDateDisplay(today)}
           </h1>
           <p className="text-sm text-text-secondary">{getWeekday(today)}</p>
         </div>
         {currentWeight && (
           <div className="text-right">
-            <p className="text-3xl font-bold text-text-primary">
+            <p className="text-3xl font-bold text-text-primary tracking-tight">
               {currentWeight.toFixed(1)}
-              <span className="text-base font-normal text-text-secondary ml-1">
+              <span className="text-base font-normal text-text-secondary ml-1 font-medium">
                 kg
               </span>
             </p>
             {weightDiff !== null && weightDiff !== 0 && (
               <p
-                className={`flex items-center gap-0.5 text-xs font-medium justify-end ${
+                className={`flex items-center gap-0.5 text-xs font-semibold justify-end ${
                   weightDiff < 0 ? "text-accent-green" : "text-accent-red"
                 }`}
               >
-                {weightDiff < 0 ? (
-                  <TrendingDown size={12} />
-                ) : (
-                  <TrendingUp size={12} />
-                )}
-                {Math.abs(weightDiff).toFixed(1)} kg
-                {weightDiff < 0 ? " ↓" : " ↑"}
+                <span className={`inline-flex p-0.5 rounded-full ${weightDiff < 0 ? "bg-accent-green/15" : "bg-accent-red/15"}`}>
+                  {weightDiff < 0 ? (
+                    <TrendingDown size={10} />
+                  ) : (
+                    <TrendingUp size={10} />
+                  )}
+                </span>
+                {Math.abs(weightDiff).toFixed(1)} kg{" "}
+                {weightDiff < 0 ? "下降" : "上升"}
               </p>
             )}
             {weightDiff === 0 && (
               <p className="flex items-center gap-0.5 text-xs font-medium text-text-secondary justify-end">
-                <Minus size={12} /> 持平
+                <Minus size={10} /> 持平
               </p>
             )}
           </div>
@@ -158,7 +193,7 @@ export default function Home() {
 
       {/* Goal Progress Ring */}
       {goalProgress !== null && (
-        <GlassCard className="flex flex-col items-center py-6">
+        <GlassCard className="flex flex-col items-center py-6 page-enter page-enter-d1">
           <ProgressRing
             progress={goalProgress}
             size={140}
@@ -170,7 +205,7 @@ export default function Home() {
             }
           >
             <div className="text-center">
-              <p className="text-2xl font-bold text-text-primary">
+              <p className="text-2xl font-bold text-text-primary tracking-tight">
                 {Math.round(goalProgress * 100)}%
               </p>
               <p className="text-xs text-text-secondary">目标进度</p>
@@ -179,27 +214,31 @@ export default function Home() {
           <div className="mt-3 flex gap-6 text-center text-xs text-text-secondary">
             {profile.goalKg && (
               <div>
-                <p className="font-semibold text-text-primary">
+                <p className="font-semibold text-text-primary text-sm">
                   {profile.goalKg} kg
                 </p>
-                <p>目标</p>
+                <p className="mt-0.5">目标</p>
               </div>
             )}
-            {totalLoss !== null && (
+            {totalChange !== null && (
               <div>
-                <p className="font-semibold text-accent-green">
-                  {totalLoss > 0 ? "+" : ""}
-                  {totalLoss.toFixed(1)} kg
+                <p
+                  className={`font-semibold text-sm ${
+                    totalChange < 0 ? "text-accent-green" : totalChange > 0 ? "text-accent-red" : "text-text-primary"
+                  }`}
+                >
+                  {totalChange > 0 ? "+" : ""}
+                  {totalChange.toFixed(1)} kg
                 </p>
-                <p>变化</p>
+                <p className="mt-0.5">变化</p>
               </div>
             )}
             {profile.startKg && (
               <div>
-                <p className="font-semibold text-text-primary">
+                <p className="font-semibold text-text-primary text-sm">
                   {profile.startKg} kg
                 </p>
-                <p>起始</p>
+                <p className="mt-0.5">起始</p>
               </div>
             )}
           </div>
@@ -207,18 +246,22 @@ export default function Home() {
       )}
 
       {/* Weight Input */}
-      <WeightInput
-        initialWeight={todayRecord?.weightKg}
-        initialNote={todayRecord?.note}
-        onSave={handleSave}
-        saving={saving}
-      />
+      <div className="page-enter page-enter-d2">
+        <WeightInput
+          initialWeight={todayRecord?.weightKg}
+          initialNote={todayRecord?.note}
+          onSave={handleSave}
+          saving={saving}
+        />
+      </div>
 
       {/* Water Intake */}
-      <GlassCard>
+      <GlassCard className="page-enter page-enter-d2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Droplets size={18} className="text-accent-blue" />
+            <span className="inline-flex p-1.5 rounded-full bg-accent-blue/10">
+              <Droplets size={16} className="text-accent-blue" />
+            </span>
             <h2 className="text-base font-semibold text-text-primary">
               饮水记录
             </h2>
@@ -227,49 +270,69 @@ export default function Home() {
             <button
               onClick={() => handleWater(-1)}
               disabled={water <= 0}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-fill text-text-primary active:scale-90 transition-transform disabled:opacity-30"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-fill text-text-primary btn-press disabled:opacity-30 disabled:active:scale-100"
+              aria-label="减少一杯"
             >
               −
             </button>
-            <span className="w-12 text-center text-lg font-bold text-accent-blue">
-              {water}
-            </span>
+            <div className="relative min-w-[3rem] text-center">
+              <span className="text-xl font-bold text-accent-blue">
+                {water}
+              </span>
+              <span className="text-xs text-text-secondary ml-0.5">杯</span>
+            </div>
             <button
               onClick={() => handleWater(1)}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-blue/10 text-accent-blue active:scale-90 transition-transform"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-blue/10 text-accent-blue btn-press"
+              aria-label="增加一杯"
             >
               +
             </button>
-            <span className="text-sm text-text-secondary ml-1">杯</span>
           </div>
         </div>
       </GlassCard>
 
       {/* BMI Card */}
       {bmi !== null && bmiCategory && (
-        <GlassCard>
+        <GlassCard className="page-enter page-enter-d3">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-text-primary">BMI</h2>
-              <p className="text-xs text-text-secondary mt-0.5">
-                身高 {profile.heightCm} cm
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold">{bmi}</p>
-              <p
-                className="text-xs font-medium"
-                style={{ color: bmiCategory.color }}
+            <div className="flex items-center gap-3">
+              <span
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full"
+                style={{ backgroundColor: `${bmiCategory.color}15` }}
               >
-                {bmiCategory.label}
-              </p>
+                <span
+                  className="text-xs font-bold"
+                  style={{ color: bmiCategory.color }}
+                >
+                  BMI
+                </span>
+              </span>
+              <div>
+                <h2 className="text-sm font-semibold text-text-primary">
+                  {bmiCategory.label}
+                </h2>
+                <p className="text-xs text-text-secondary">
+                  身高 {profile.heightCm} cm · {bmi}
+                </p>
+              </div>
+            </div>
+            <div
+              className="text-lg font-bold"
+              style={{ color: bmiCategory.color }}
+            >
+              {bmi}
             </div>
           </div>
         </GlassCard>
       )}
 
       {/* Chart */}
-      {records.length > 0 && <WeightChart data={records} />}
+      {records.length > 0 && (
+        <div className="page-enter page-enter-d4">
+          <WeightChart data={records} />
+        </div>
+      )}
     </div>
   );
 }

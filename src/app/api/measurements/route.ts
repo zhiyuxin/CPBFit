@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+
+async function getUserId(): Promise<string | null> {
+  const session = await auth();
+  return session?.user?.id ?? null;
+}
 
 export async function GET() {
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ error: "未登录" }, { status: 401 });
+
   const records = await prisma.bodyMeasurement.findMany({
+    where: { userId },
     orderBy: { date: "desc" },
     take: 30,
   });
@@ -10,6 +20,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ error: "未登录" }, { status: 401 });
+
   const body = await request.json();
   const { date, waistCm, hipCm, armCm, thighCm } = body;
 
@@ -19,7 +32,7 @@ export async function POST(request: NextRequest) {
 
   const dateObj = new Date(date);
   const existing = await prisma.bodyMeasurement.findUnique({
-    where: { date: dateObj },
+    where: { userId_date: { userId, date: dateObj } },
   });
 
   const data = {
@@ -31,14 +44,14 @@ export async function POST(request: NextRequest) {
 
   if (existing) {
     const record = await prisma.bodyMeasurement.update({
-      where: { date: dateObj },
+      where: { id: existing.id },
       data,
     });
     return NextResponse.json(record);
   }
 
   const record = await prisma.bodyMeasurement.create({
-    data: { date: dateObj, ...data },
+    data: { userId, date: dateObj, ...data },
   });
   return NextResponse.json(record, { status: 201 });
 }

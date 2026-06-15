@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { BottomNav } from "@/components/BottomNav";
+import { AuthProvider } from "@/components/AuthProvider";
+import { NotificationProvider } from "@/components/NotificationProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,11 +44,15 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className="min-h-screen bg-bg text-text-primary antialiased pb-20 safe-bottom">
-        <main className="mx-auto max-w-lg px-4 pt-4 pb-4">
-          {children}
-        </main>
-        <BottomNav />
+      <body className="min-h-screen bg-bg text-text-primary antialiased pb-20 safe-top">
+        <AuthProvider>
+          <NotificationProvider>
+            <main className="mx-auto max-w-lg px-4 pt-4 pb-4 page-enter">
+              {children}
+            </main>
+          </NotificationProvider>
+          <BottomNav />
+        </AuthProvider>
       </body>
     </html>
   );

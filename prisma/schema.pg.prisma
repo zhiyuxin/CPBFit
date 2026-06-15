@@ -4,36 +4,58 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("POSTGRES_URL")
+  provider = "sqlite"
+}
+
+model User {
+  id             String                @id @default(cuid())
+  name           String
+  email          String                @unique
+  hashedPassword String
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  profile        Profile?
+  weightRecords  WeightRecord[]
+  measurements   BodyMeasurement[]
+  waterRecords   WaterRecord[]
+  photos         ProgressPhoto[]
+  mealRecords    MealRecord[]
+  notifications  NotificationSetting[]
 }
 
 model Profile {
-  id        String   @id @default(cuid())
-  name      String   @default("我")
-  heightCm  Float?
-  goalKg    Float?
-  startKg   Float?
-  birthday  String?
-  gender    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String   @default("我")
+  heightCm      Float?
+  goalKg        Float?
+  startKg       Float?
+  calorieBudget Float?   // 每日热量预算
+  birthday      String?
+  gender        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model WeightRecord {
   id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   date      DateTime
   weightKg  Float
   note      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([date])
-  @@index([date])
+  @@unique([userId, date])
+  @@index([userId, date])
 }
 
 model BodyMeasurement {
   id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   date      DateTime
   waistCm   Float?
   hipCm     Float?
@@ -41,26 +63,79 @@ model BodyMeasurement {
   thighCm   Float?
   createdAt DateTime @default(now())
 
-  @@unique([date])
-  @@index([date])
+  @@unique([userId, date])
+  @@index([userId, date])
 }
 
 model WaterRecord {
   id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   date      DateTime
   cups      Int      @default(0)
   createdAt DateTime @default(now())
 
-  @@unique([date])
-  @@index([date])
+  @@unique([userId, date])
+  @@index([userId, date])
 }
 
 model ProgressPhoto {
   id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   date      DateTime
   imageData String
   caption   String?
   createdAt DateTime @default(now())
 
-  @@index([date])
+  @@index([userId, date])
+}
+
+model FoodItem {
+  id          String        @id @default(cuid())
+  name        String
+  category    String
+  calories    Float
+  protein     Float?
+  fat         Float?
+  carbs       Float?
+  unit        String?       @default("份")
+  unitGrams   Float?        @default(100)
+  mealRecords MealRecord[]
+}
+
+model MealRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  mealType  String   // breakfast, lunch, dinner, snack
+  foodId    String
+  food      FoodItem @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  grams     Float    // 实际克数
+  calories  Float    // 实际热量（预计算）
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+  @@index([userId, mealType])
+}
+
+model NotificationSetting {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled     Boolean  @default(true)
+  hour        Int      // 通知小时 (0-23)
+  minute      Int      // 通知分钟 (0-59)
+  title       String   @default("WeightTrack")
+  body        String   // 通知正文
+  repeatCount Int      @default(1) // 重复次数，0=无限
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URL")
 }

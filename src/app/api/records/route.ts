@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+
+async function getUserId(): Promise<string | null> {
+  const session = await auth();
+  return session?.user?.id ?? null;
+}
 
 export async function GET(request: NextRequest) {
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ error: "未登录" }, { status: 401 });
+
   const searchParams = request.nextUrl.searchParams;
   const days = parseInt(searchParams.get("days") || "30");
 
@@ -9,7 +18,7 @@ export async function GET(request: NextRequest) {
   since.setDate(since.getDate() - days);
 
   const records = await prisma.weightRecord.findMany({
-    where: { date: { gte: since } },
+    where: { userId, date: { gte: since } },
     orderBy: { date: "asc" },
   });
 
@@ -17,11 +26,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ error: "未登录" }, { status: 401 });
+
   try {
     const body = await request.json();
     const { date, weightKg, note } = body;
-
-    console.log("POST /api/records body:", { date, weightKg, note });
 
     if (!date || !weightKg) {
       return NextResponse.json(
@@ -40,12 +50,12 @@ export async function POST(request: NextRequest) {
     }
 
     const existing = await prisma.weightRecord.findUnique({
-      where: { date: dateObj },
+      where: { userId_date: { userId, date: dateObj } },
     });
 
     if (existing) {
       const record = await prisma.weightRecord.update({
-        where: { date: dateObj },
+        where: { id: existing.id },
         data: { weightKg: parseFloat(weightKg), note: note || null },
       });
       return NextResponse.json(record);
@@ -53,6 +63,7 @@ export async function POST(request: NextRequest) {
 
     const record = await prisma.weightRecord.create({
       data: {
+        userId,
         date: dateObj,
         weightKg: parseFloat(weightKg),
         note: note || null,
@@ -60,22 +71,31 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(record, { status: 201 });
-  } catch (e) {
-    console.error("POST /api/records error:", e);
+  } catch (error) {
+    console.error("POST /api/records error:", error);
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "请求格式错误" },
+      { error: error instanceof Error ? error.message : "请求格式错误" },
       { status: 400 }
     );
   }
 }
 
 export async function DELETE(request: NextRequest) {
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ error: "未登录" }, { status: 401 });
+
   const searchParams = request.nextUrl.searchParams;
   const id = searchParams.get("id");
 
   if (!id) {
     return NextResponse.json({ error: "缺少记录 ID" }, { status: 400 });
   }
+
+  // Only delete if it belongs to the current user
+  const record = await prisma.weightRecord.findFirst({
+    where: { id, userId },
+  });
+  if (!record) return NextResponse.json({ error: "无权删除" }, { status: 403 });
 
   await prisma.weightRecord.delete({ where: { id } });
   return NextResponse.json({ success: true });
