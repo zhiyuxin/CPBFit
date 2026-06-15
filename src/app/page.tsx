@@ -1,65 +1,275 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { GlassCard } from "@/components/GlassCard";
+import { WeightInput } from "@/components/WeightInput";
+import { WeightChart } from "@/components/WeightChart";
+import { ProgressRing } from "@/components/ProgressRing";
+import {
+  calculateBMI,
+  getBMICategory,
+  formatDateDisplay,
+  getWeekday,
+} from "@/lib/utils";
+import { TrendingDown, TrendingUp, Minus, Droplets } from "lucide-react";
+
+interface WeightRecord {
+  id: string;
+  date: string;
+  weightKg: number;
+  note?: string;
+}
+
+interface Profile {
+  heightCm?: number;
+  goalKg?: number;
+  startKg?: number;
+  name?: string;
+}
 
 export default function Home() {
+  const [records, setRecords] = useState<WeightRecord[]>([]);
+  const [profile, setProfile] = useState<Profile>({});
+  const [water, setWater] = useState(0);
+  const [saving, setSaving] = useState(false);
+
+  const loadData = useCallback(async () => {
+    const [recRes, profRes, waterRes] = await Promise.all([
+      fetch("/api/records?days=90"),
+      fetch("/api/profile"),
+      fetch("/api/water"),
+    ]);
+    const recData = await recRes.json();
+    const profData = await profRes.json();
+    const waterData = await waterRes.json();
+    setRecords(recData);
+    setProfile(profData);
+
+    const today = new Date().toISOString().split("T")[0];
+    const todayWater = waterData.find(
+      (w: any) => w.date.split("T")[0] === today
+    );
+    setWater(todayWater?.cups || 0);
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleSave = async (data: {
+    date: string;
+    weightKg: number;
+    note?: string;
+  }) => {
+    setSaving(true);
+    await fetch("/api/records", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    await loadData();
+    setSaving(false);
+  };
+
+  const handleWater = async (delta: number) => {
+    const newCups = Math.max(0, water + delta);
+    setWater(newCups);
+    const today = new Date().toISOString().split("T")[0];
+    await fetch("/api/water", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: today, cups: newCups }),
+    });
+  };
+
+  const today = new Date().toISOString().split("T")[0];
+  const todayRecord = records.find((r) => r.date.split("T")[0] === today);
+  const latestRecord = records[records.length - 1];
+  const currentWeight = todayRecord?.weightKg || latestRecord?.weightKg;
+
+  const latestWeight = latestRecord?.weightKg;
+  const prevWeight = records.length > 1 ? records[records.length - 2]?.weightKg : null;
+  const weightDiff = latestWeight && prevWeight ? latestWeight - prevWeight : null;
+
+  const bmi =
+    profile.heightCm && currentWeight
+      ? calculateBMI(currentWeight, profile.heightCm)
+      : null;
+  const bmiCategory = bmi ? getBMICategory(bmi) : null;
+
+  const goalProgress =
+    profile.startKg && profile.goalKg && currentWeight != null
+      ? Math.min(
+          1,
+          Math.max(
+            0,
+            (profile.startKg - currentWeight) /
+              Math.max(0.1, profile.startKg - profile.goalKg)
+          )
+        )
+      : null;
+
+  const totalLoss =
+    profile.startKg && currentWeight != null
+      ? Math.round((currentWeight - profile.startKg) * 10) / 10
+      : null;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-text-primary">
+            {formatDateDisplay(today)}
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+          <p className="text-sm text-text-secondary">{getWeekday(today)}</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        {currentWeight && (
+          <div className="text-right">
+            <p className="text-3xl font-bold text-text-primary">
+              {currentWeight.toFixed(1)}
+              <span className="text-base font-normal text-text-secondary ml-1">
+                kg
+              </span>
+            </p>
+            {weightDiff !== null && weightDiff !== 0 && (
+              <p
+                className={`flex items-center gap-0.5 text-xs font-medium justify-end ${
+                  weightDiff < 0 ? "text-accent-green" : "text-accent-red"
+                }`}
+              >
+                {weightDiff < 0 ? (
+                  <TrendingDown size={12} />
+                ) : (
+                  <TrendingUp size={12} />
+                )}
+                {Math.abs(weightDiff).toFixed(1)} kg
+                {weightDiff < 0 ? " ↓" : " ↑"}
+              </p>
+            )}
+            {weightDiff === 0 && (
+              <p className="flex items-center gap-0.5 text-xs font-medium text-text-secondary justify-end">
+                <Minus size={12} /> 持平
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Goal Progress Ring */}
+      {goalProgress !== null && (
+        <GlassCard className="flex flex-col items-center py-6">
+          <ProgressRing
+            progress={goalProgress}
+            size={140}
+            strokeWidth={10}
+            color={
+              goalProgress >= 1
+                ? "var(--accent-green)"
+                : "var(--accent-blue)"
+            }
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-text-primary">
+                {Math.round(goalProgress * 100)}%
+              </p>
+              <p className="text-xs text-text-secondary">目标进度</p>
+            </div>
+          </ProgressRing>
+          <div className="mt-3 flex gap-6 text-center text-xs text-text-secondary">
+            {profile.goalKg && (
+              <div>
+                <p className="font-semibold text-text-primary">
+                  {profile.goalKg} kg
+                </p>
+                <p>目标</p>
+              </div>
+            )}
+            {totalLoss !== null && (
+              <div>
+                <p className="font-semibold text-accent-green">
+                  {totalLoss > 0 ? "+" : ""}
+                  {totalLoss.toFixed(1)} kg
+                </p>
+                <p>变化</p>
+              </div>
+            )}
+            {profile.startKg && (
+              <div>
+                <p className="font-semibold text-text-primary">
+                  {profile.startKg} kg
+                </p>
+                <p>起始</p>
+              </div>
+            )}
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Weight Input */}
+      <WeightInput
+        initialWeight={todayRecord?.weightKg}
+        initialNote={todayRecord?.note}
+        onSave={handleSave}
+        saving={saving}
+      />
+
+      {/* Water Intake */}
+      <GlassCard>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Droplets size={18} className="text-accent-blue" />
+            <h2 className="text-base font-semibold text-text-primary">
+              饮水记录
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleWater(-1)}
+              disabled={water <= 0}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-fill text-text-primary active:scale-90 transition-transform disabled:opacity-30"
+            >
+              −
+            </button>
+            <span className="w-12 text-center text-lg font-bold text-accent-blue">
+              {water}
+            </span>
+            <button
+              onClick={() => handleWater(1)}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-blue/10 text-accent-blue active:scale-90 transition-transform"
+            >
+              +
+            </button>
+            <span className="text-sm text-text-secondary ml-1">杯</span>
+          </div>
         </div>
-      </main>
+      </GlassCard>
+
+      {/* BMI Card */}
+      {bmi !== null && bmiCategory && (
+        <GlassCard>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-text-primary">BMI</h2>
+              <p className="text-xs text-text-secondary mt-0.5">
+                身高 {profile.heightCm} cm
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold">{bmi}</p>
+              <p
+                className="text-xs font-medium"
+                style={{ color: bmiCategory.color }}
+              >
+                {bmiCategory.label}
+              </p>
+            </div>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Chart */}
+      {records.length > 0 && <WeightChart data={records} />}
     </div>
   );
 }

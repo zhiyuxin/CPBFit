@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Profile {
+  id        String   @id @default(cuid())
+  name      String   @default("我")
+  heightCm  Float?   // 身高 cm
+  goalKg    Float?   // 目标体重 kg
+  startKg   Float?   // 起始体重 kg
+  birthday  String?  // 生日 YYYY-MM-DD
+  gender    String?  // male / female
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WeightRecord {
+  id        String   @id @default(cuid())
+  date      DateTime // 只存日期部分 (YYYY-MM-DD)
+  weightKg  Float    // 体重 kg
+  note      String?  // 备注
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([date])
+  @@index([date])
+}
+
+model BodyMeasurement {
+  id        String   @id @default(cuid())
+  date      DateTime
+  waistCm   Float?   // 腰围
+  hipCm     Float?   // 臀围
+  armCm     Float?   // 臂围
+  thighCm   Float?   // 大腿围
+  createdAt DateTime @default(now())
+
+  @@unique([date])
+  @@index([date])
+}
+
+model WaterRecord {
+  id        String   @id @default(cuid())
+  date      DateTime
+  cups      Int      @default(0) // 杯数
+  createdAt DateTime @default(now())
+
+  @@unique([date])
+  @@index([date])
+}
+
+model ProgressPhoto {
+  id        String   @id @default(cuid())
+  date      DateTime
+  imageData String   // base64 编码的图片数据
+  caption   String?  // 标注
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}

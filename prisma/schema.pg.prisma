@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URL")
+}
+
+model Profile {
+  id        String   @id @default(cuid())
+  name      String   @default("我")
+  heightCm  Float?
+  goalKg    Float?
+  startKg   Float?
+  birthday  String?
+  gender    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WeightRecord {
+  id        String   @id @default(cuid())
+  date      DateTime
+  weightKg  Float
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([date])
+  @@index([date])
+}
+
+model BodyMeasurement {
+  id        String   @id @default(cuid())
+  date      DateTime
+  waistCm   Float?
+  hipCm     Float?
+  armCm     Float?
+  thighCm   Float?
+  createdAt DateTime @default(now())
+
+  @@unique([date])
+  @@index([date])
+}
+
+model WaterRecord {
+  id        String   @id @default(cuid())
+  date      DateTime
+  cups      Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([date])
+  @@index([date])
+}
+
+model ProgressPhoto {
+  id        String   @id @default(cuid())
+  date      DateTime
+  imageData String
+  caption   String?
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
