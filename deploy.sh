@@ -83,9 +83,16 @@ apt install -y curl git unzip build-essential nginx certbot python3-certbot-ngin
 echo ""
 echo -e "${BLUE}[2/7] 安装 Node.js $NODE_VERSION ...${NC}"
 
-if ! command -v node &>/dev/null; then
+# 检查当前 Node 版本是否满足要求
+CURRENT_NODE=$(node -v 2>/dev/null || echo "v0")
+CURRENT_MAJOR=$(echo "$CURRENT_NODE" | sed 's/v//' | cut -d. -f1)
+
+if [ "$CURRENT_MAJOR" -lt "$NODE_VERSION" ] 2>/dev/null; then
+  echo -e "  ${YELLOW}当前 Node.js 版本 ($CURRENT_NODE) 过旧，升级到 $NODE_VERSION ...${NC}"
   curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash -
   apt install -y nodejs
+else
+  echo -e "  ${GREEN}Node.js $CURRENT_NODE 已满足要求${NC}"
 fi
 
 echo -e "  Node.js: ${GREEN}$(node -v)${NC}"
