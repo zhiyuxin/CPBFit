@@ -1,9 +1,22 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
+import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 
+const authSecretSeed =
+  process.env.AUTH_SECRET ??
+  process.env.NEXTAUTH_SECRET ??
+  process.env.POSTGRES_URL ??
+  process.env.DATABASE_URL ??
+  (process.env.NODE_ENV === "production" ? undefined : "weight-track-dev-secret");
+
+const authSecret = authSecretSeed
+  ? createHash("sha256").update(authSecretSeed).digest("hex")
+  : undefined;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: authSecret,
   providers: [
     Credentials({
       name: "credentials",
