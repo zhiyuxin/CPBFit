@@ -4,15 +4,22 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+function isPostgresUrl(url: string | undefined): url is string {
+  return !!url && /^postgres(?:ql)?:\/\//.test(url);
+}
+
 function createPrismaClient(): PrismaClient {
-  if (process.env.POSTGRES_URL) {
+  const postgresUrl = process.env.POSTGRES_URL ??
+    (isPostgresUrl(process.env.DATABASE_URL) ? process.env.DATABASE_URL : undefined);
+
+  if (postgresUrl) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { PrismaPg } = require("@prisma/adapter-pg") as {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       PrismaPg: new (opts: any) => any;
     };
     return new PrismaClient({
-      adapter: new PrismaPg({ connectionString: process.env.POSTGRES_URL }),
+      adapter: new PrismaPg({ connectionString: postgresUrl }),
     });
   }
 
