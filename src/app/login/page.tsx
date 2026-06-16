@@ -3,7 +3,14 @@
 import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { GlassCard } from "@/components/GlassCard";
-import { Scale, Eye, EyeOff, Mail, Lock, User } from "lucide-react";
+import {
+  Scale,
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+} from "lucide-react";
 
 export default function LoginPage() {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -14,7 +21,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Show error from failed login redirect
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -45,8 +51,6 @@ export default function LoginPage() {
         }
       }
 
-      // signIn with redirect: true = full form POST, page navigates away.
-      // On error the server redirects back to /login?error=... (handled by useEffect above).
       await signIn("credentials", {
         email,
         password,
@@ -54,36 +58,34 @@ export default function LoginPage() {
         callbackUrl: "/",
       });
     } catch {
-      // Only reached on unexpected error (not wrong password)
       setError("操作失败，请稍后重试");
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-bg flex flex-col items-center justify-center px-6 py-12">
-      {/* Logo */}
-      <div className="flex flex-col items-center mb-8">
-        <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10 mb-4">
-          <Scale size={32} className="text-accent" />
+    <div className="fixed inset-0 z-50 bg-bg flex flex-col items-center justify-center px-5 overflow-y-auto">
+      {/* Logo — compact */}
+      <div className="flex flex-col items-center mb-6 shrink-0">
+        <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 mb-3">
+          <Scale size={26} className="text-accent" />
         </span>
         <h1 className="text-2xl font-bold text-text-primary tracking-tight">
           WeightTrack
         </h1>
-        <p className="text-sm text-text-secondary mt-1">
-          优雅的体重管理工具
-        </p>
+        <p className="text-xs text-text-secondary mt-1">优雅的体重管理</p>
       </div>
 
-      <GlassCard className="w-full max-w-sm">
-        {/* Tab switcher */}
-        <div className="flex bg-fill rounded-xl p-0.5 mb-6">
+      {/* Card */}
+      <GlassCard className="w-full max-w-sm !py-5 !px-5">
+        {/* Mode tabs */}
+        <div className="flex bg-fill rounded-2xl p-1 mb-5">
           <button
             type="button"
             onClick={() => { setMode("login"); setError(""); }}
-            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+            className={`flex-1 py-2 text-sm font-semibold rounded-xl transition-all ${
               mode === "login"
-                ? "bg-white text-text-primary shadow-sm dark:bg-card"
+                ? "bg-white text-text-primary shadow-sm"
                 : "text-text-secondary"
             }`}
           >
@@ -92,9 +94,9 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => { setMode("register"); setError(""); }}
-            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+            className={`flex-1 py-2 text-sm font-semibold rounded-xl transition-all ${
               mode === "register"
-                ? "bg-white text-text-primary shadow-sm dark:bg-card"
+                ? "bg-white text-text-primary shadow-sm"
                 : "text-text-secondary"
             }`}
           >
@@ -102,13 +104,13 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           {mode === "register" && (
             <div>
-              <label className="text-xs font-semibold text-text-secondary mb-1.5 block">
+              <label className="text-[11px] font-semibold text-text-secondary mb-1 block">
                 昵称
               </label>
-              <div className="flex items-center gap-2 bg-bg/50 rounded-xl border border-separator/30 px-4 py-1 focus-within:border-accent transition-colors">
+              <div className="flex items-center gap-2.5 bg-bg/50 rounded-xl border border-separator/25 px-3.5 focus-within:border-accent/40 focus-within:ring-2 focus-within:ring-accent/8 transition-all">
                 <User size={14} className="text-text-tertiary shrink-0" />
                 <input
                   type="text"
@@ -123,10 +125,10 @@ export default function LoginPage() {
           )}
 
           <div>
-            <label className="text-xs font-semibold text-text-secondary mb-1.5 block">
+            <label className="text-[11px] font-semibold text-text-secondary mb-1 block">
               邮箱
             </label>
-            <div className="flex items-center gap-2 bg-bg/50 rounded-xl border border-separator/30 px-4 py-1 focus-within:border-accent transition-colors">
+            <div className="flex items-center gap-2.5 bg-bg/50 rounded-xl border border-separator/25 px-3.5 focus-within:border-accent/40 focus-within:ring-2 focus-within:ring-accent/8 transition-all">
               <Mail size={14} className="text-text-tertiary shrink-0" />
               <input
                 type="email"
@@ -140,10 +142,10 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-text-secondary mb-1.5 block">
+            <label className="text-[11px] font-semibold text-text-secondary mb-1 block">
               密码
             </label>
-            <div className="flex items-center gap-2 bg-bg/50 rounded-xl border border-separator/30 px-4 py-1 focus-within:border-accent transition-colors">
+            <div className="flex items-center gap-2.5 bg-bg/50 rounded-xl border border-separator/25 px-3.5 focus-within:border-accent/40 focus-within:ring-2 focus-within:ring-accent/8 transition-all">
               <Lock size={14} className="text-text-tertiary shrink-0" />
               <input
                 type={showPassword ? "text" : "password"}
@@ -157,7 +159,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="text-text-tertiary hover:text-text-secondary"
+                className="text-text-tertiary hover:text-text-secondary transition-colors shrink-0"
               >
                 {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
@@ -165,19 +167,19 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <p className="text-xs text-accent-red font-medium text-center">
-              {error}
-            </p>
+            <div className="bg-accent-red/8 rounded-xl px-3 py-2">
+              <p className="text-xs font-medium text-accent-red text-center">{error}</p>
+            </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-2xl bg-accent py-3.5 text-base font-semibold text-white transition-all btn-press disabled:opacity-50 shadow-sm shadow-accent/20"
+            className="w-full rounded-2xl bg-accent py-3 text-sm font-semibold text-white btn-press disabled:opacity-50 shadow-md shadow-accent/20 mt-1"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <span className="inline-block h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                <span className="inline-block h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                 处理中...
               </span>
             ) : mode === "login" ? (

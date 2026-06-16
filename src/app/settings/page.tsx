@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { GlassCard } from "@/components/GlassCard";
 import { NotificationSettings } from "@/components/NotificationSettings";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { User, Save, Check, Trash2, Info, LogOut } from "lucide-react";
 
 interface Profile {
@@ -244,12 +245,15 @@ export default function SettingsPage() {
           <span className="inline-flex p-1.5 rounded-xl bg-fill mt-0.5">
             <Info size={14} className="text-text-secondary" />
           </span>
-          <div>
+          <div className="flex-1">
             <h2 className="text-sm font-semibold text-text-primary mb-1">关于 WeightTrack</h2>
             <p className="text-xs text-text-secondary leading-relaxed">
               优雅的体重管理工具，帮你追踪体重变化趋势，设定减重目标，记录身体数据。使用过程中产生的数据仅保存在本地设备中。
             </p>
-            <p className="text-[10px] text-text-tertiary mt-2">v1.0.0</p>
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-separator/10">
+              <p className="text-[10px] text-text-tertiary">v1.0.0</p>
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </GlassCard>
@@ -269,14 +273,7 @@ export default function SettingsPage() {
           <button
             onClick={async () => {
               if (confirm("确定要删除所有数据吗？此操作不可恢复。")) {
-                const records = await fetch("/api/records?days=9999").then(
-                  (r) => r.json()
-                );
-                for (const r of records) {
-                  await fetch(`/api/records?id=${r.id}`, {
-                    method: "DELETE",
-                  });
-                }
+                await fetch("/api/auth/clear-data", { method: "POST" });
                 window.location.reload();
               }
             }}

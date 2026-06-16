@@ -6,6 +6,16 @@ export async function GET(request: NextRequest) {
   const q = searchParams.get("q") || "";
   const category = searchParams.get("category") || "";
 
+  // Return distinct categories
+  if (searchParams.get("categories") === "true") {
+    const foods = await prisma.foodItem.findMany({
+      select: { category: true },
+      distinct: ["category"],
+      orderBy: { category: "asc" },
+    });
+    return NextResponse.json(foods.map((f) => f.category));
+  }
+
   const where: Record<string, unknown> = {};
   if (q) {
     where.name = { contains: q };
@@ -14,9 +24,10 @@ export async function GET(request: NextRequest) {
     where.category = category;
   }
 
+  // When no query and no category, return all foods
   const foods = await prisma.foodItem.findMany({
     where: q || category ? where : {},
-    orderBy: { category: "asc" },
+    orderBy: [{ category: "asc" }, { name: "asc" }],
     take: 50,
   });
 

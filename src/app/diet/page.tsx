@@ -52,9 +52,11 @@ const mealTypeLabels: Record<string, { label: string; icon: React.ElementType; c
 export default function DietPage() {
   const [meals, setMeals] = useState<MealRecord[]>([]);
   const [foods, setFoods] = useState<FoodItem[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [profile, setProfile] = useState<Profile>({});
   const [search, setSearch] = useState("");
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [grams, setGrams] = useState("100");
   const [mealType, setMealType] = useState<"breakfast" | "lunch" | "dinner" | "snack">("lunch");
   const [loading, setLoading] = useState(true);
@@ -85,13 +87,20 @@ export default function DietPage() {
   }, [loadData]);
 
   const searchFoods = useCallback(async (q: string) => {
-    if (!q.trim()) {
-      setFoods([]);
-      return;
-    }
-    const res = await fetch(`/api/foods?q=${encodeURIComponent(q)}`);
+    const params = new URLSearchParams();
+    if (q.trim()) params.set("q", q.trim());
+    if (!q.trim() && selectedCategory) params.set("category", selectedCategory);
+    const res = await fetch(`/api/foods?${params}`);
     const data = await res.json();
     setFoods(data);
+  }, [selectedCategory]);
+
+  // Load categories on mount
+  useEffect(() => {
+    fetch("/api/foods?categories=true")
+      .then((r) => r.json())
+      .then((data) => setCategories(data))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -292,7 +301,10 @@ export default function DietPage() {
               {foods.slice(0, 20).map((food) => (
                 <button
                   key={food.id}
-                  onClick={() => setSelectedFood(food)}
+                  onClick={() => {
+                    setSelectedFood(food);
+                    setSelectedCategory("");
+                  }}
                   className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-fill/50 transition-colors text-left"
                 >
                   <div>
@@ -305,10 +317,48 @@ export default function DietPage() {
                   </div>
                 </button>
               ))}
+
+              {/* Category pills when no search */}
+              {!search && !selectedCategory && foods.length === 0 && (
+                <div className="py-2 space-y-2">
+                  <p className="text-[10px] text-text-tertiary font-medium px-2">
+                    按分类浏览：
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {categories.map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setSelectedCategory(cat)}
+                        className="text-xs px-2.5 py-1 rounded-lg border border-separator/30 bg-card text-text-secondary hover:border-accent/30 hover:text-accent transition-all"
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Show foods for selected category */}
+              {!search && selectedCategory && foods.length === 0 && (
+                <div className="py-4 text-center">
+                  <p className="text-xs text-text-tertiary">该分类暂无数据</p>
+                </div>
+              )}
+
+              {/* Back to categories button */}
+              {!search && selectedCategory && (
+                <button
+                  onClick={() => { setSelectedCategory(""); setFoods([]); }}
+                  className="w-full text-xs text-accent text-center py-2 font-medium"
+                >
+                  ← 返回分类列表
+                </button>
+              )}
+
               {search && foods.length === 0 && (
                 <p className="text-xs text-text-tertiary text-center py-4">没有找到 "{search}"</p>
               )}
-              {!search && (
+              {!search && !selectedCategory && foods.length === 0 && !categories.length && (
                 <p className="text-xs text-text-tertiary text-center py-4">输入食物名称搜索</p>
               )}
             </div>

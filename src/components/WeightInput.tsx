@@ -87,10 +87,10 @@ export function WeightInput({
               step="0.1"
               min="20"
               max="300"
-              className="w-40 rounded-2xl bg-accent/8 px-4 py-3.5 text-center text-3xl font-bold text-accent outline-none transition-shadow focus:shadow-[0_0_0_3px_rgba(0,122,255,0.2)]"
+              className="w-40 rounded-2xl bg-accent/8 pr-10 pl-4 py-3.5 text-center text-3xl font-bold text-accent outline-none transition-shadow focus:shadow-[0_0_0_3px_rgba(0,122,255,0.2)]"
               required
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-text-secondary">
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-text-secondary pointer-events-none">
               kg
             </span>
           </div>
