@@ -120,7 +120,17 @@ DEEPSEEK_API_KEY="sk-your-deepseek-api-key-here"   # 从 https://platform.deepse
 
 ## 📦 部署方式
 
-### 方式一：Gitee Go 自动部署（推送即上线）
+### 🐳 方式一：Docker 部署（推荐）
+
+```bash
+git clone https://gitee.com/luodm/cpbfit.git /opt/weight-track
+cd /opt/weight-track
+bash docker-deploy.sh
+# → 自动安装 Docker + 构建镜像 + 启动容器
+# → 访问 http://服务器IP:3000
+```
+
+### 方式二：Gitee Go 自动部署（推送即上线）
 
 代码推送到 Gitee 后自动构建+部署到服务器。配置 Gitee Go 环境变量后一次搞定。
 

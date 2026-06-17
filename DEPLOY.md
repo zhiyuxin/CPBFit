@@ -1,20 +1,55 @@
-# WeightTrack VPS 部署指南
+# WeightTrack 部署指南
 
-> 从零开始在云服务器上部署 WeightTrack，含 Node.js、数据库、Nginx、SSL 全流程。
-
----
-
-## 前置准备
-
-- **一台云服务器**（阿里云/腾讯云/华为云/搬瓦工等）
-  - 系统：Ubuntu 20.04+ / Debian 11+
-  - 配置：1核 1GB 起（推荐 2核 2GB）
-- **一个域名**（可选，如果用 IP 访问则不需要）
-- **DeepSeek API Key**（可选，AI 功能需要）
+> 三种方式部署 WeightTrack：Docker（最推荐）、Gitee Go 自动部署、手动部署。
 
 ---
 
-## 方式一：Gitee Go 自动部署（推荐）
+## 🐳 方式一：Docker 部署（推荐）
+
+> 一行命令，5 分钟搞定。不污染服务器环境，数据持久化在 Docker Volume 中。
+
+### 前置条件
+
+- **一台服务器**（任意 Linux，1GB 内存+）
+- **安装了 Docker**（如未安装，脚本会自动安装）
+
+### 部署步骤
+
+在**服务器 SSH 终端**运行：
+
+```bash
+# 1. 克隆项目
+git clone https://gitee.com/luodm/cpbfit.git /opt/weight-track
+cd /opt/weight-track
+
+# 2. 一键部署
+bash docker-deploy.sh
+```
+
+脚本会自动：
+1. 检查/安装 Docker + Docker Compose
+2. 创建 `.env` 文件（自动生成安全密钥）
+3. 构建 Docker 镜像（安装依赖 → 建 SQLite 数据库 → 导入 190 种食物 → 生产构建）
+4. 启动容器（端口 3000，数据持久化在 Docker Volume）
+
+### 运行后命令
+
+```bash
+docker compose logs -f        # 查看日志
+docker compose restart        # 重启应用
+docker compose down           # 停止
+git pull && docker compose up -d --build  # 更新代码
+```
+
+### 备份数据
+
+```bash
+docker cp weight-track:/app/prisma/dev.db ./backup-$(date +%Y%m%d).db
+```
+
+---
+
+## 🔧 方式二：Gitee Go 自动部署（推荐）
 
 > 代码推送到 Gitee 后自动触发构建和部署到你的服务器。
 
@@ -66,7 +101,7 @@ pm2 logs weight-track
 
 ---
 
-## 方式二：一键部署脚本
+## 🚀 方式三：一键部署脚本
 
 SSH 登录到服务器后，运行：
 
@@ -107,7 +142,7 @@ bash deploy.sh
 
 ---
 
-## 方式二：手动部署
+## 📋 方式四：手动部署
 
 > 注意：`git clone` 会直接将项目文件克隆到目标目录，项目没有多级嵌套。
 > 如 `git clone ... /var/www/weight-track` 后，项目文件就在 `/var/www/weight-track/` 中。

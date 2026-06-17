@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.gitignore
+.env
+.env.*
+*.md
+README.md
+DEPLOY.md
+AGENTS.md
+deploy.sh
+docker-deploy.sh
+.DS_Store
+.vercel
+.gitee
+dev.db
